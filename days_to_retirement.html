@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Days to Retirement</title>
+<style>
+  :root {
+    --navy:#06152e;
+    --blue:#0b2f6b;
+    --mid:#1769aa;
+    --cyan:#57c7ff;
+    --white:#f7fbff;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; min-height:100vh; display:grid; place-items:center; overflow:hidden;
+    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(circle at 20% 15%, rgba(87,199,255,.25), transparent 28%),
+      radial-gradient(circle at 80% 85%, rgba(23,105,170,.28), transparent 30%),
+      linear-gradient(135deg,var(--navy),var(--blue) 55%,#0a477d);
+    color:var(--white);
+  }
+  main {
+    position:relative; z-index:2; width:min(620px,calc(100% - 40px)); text-align:center;
+    padding:52px 30px 44px; border-radius:28px;
+    background:linear-gradient(145deg,rgba(8,31,67,.94),rgba(16,70,125,.88));
+    border:1px solid rgba(135,220,255,.28);
+    box-shadow:0 24px 70px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.08);
+    backdrop-filter:blur(10px);
+  }
+  h1 {
+    margin:0 0 20px; font-size:clamp(30px,6vw,50px); letter-spacing:.02em;
+    color:#dff6ff; text-shadow:0 0 18px rgba(87,199,255,.35);
+  }
+  #days {
+    font-size:clamp(76px,20vw,150px); font-weight:900; line-height:.95;
+    background:linear-gradient(180deg,#ffffff 10%,#8edcff 55%,#37a9ed 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow:0 0 28px rgba(87,199,255,.18);
+  }
+  .label { font-size:25px; color:#b9eaff; margin-top:12px; font-weight:700; }
+  .date { margin-top:28px; color:#d7eeff; font-size:17px; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:3; }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<main>
+  <h1>Days to Retirement</h1>
+  <div id="days">—</div>
+  <div class="label">days left</div>
+</main>
+
+<script>
+  const target = new Date(2028, 5, 30);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysLeft = Math.max(0, Math.round((target - today) / msPerDay));
+  document.getElementById("days").textContent = daysLeft.toLocaleString();
+
+  // Confetti blast on startup
+  const canvas = document.getElementById("confetti");
+  const ctx = canvas.getContext("2d");
+  let w, h, pieces = [], start = performance.now();
+  const colors = ["#ffffff","#8edcff","#57c7ff","#2f80ed","#1769aa","#7de3ff"];
+
+  function resize() {
+    w = canvas.width = innerWidth * devicePixelRatio;
+    h = canvas.height = innerHeight * devicePixelRatio;
+    canvas.style.width = innerWidth + "px";
+    canvas.style.height = innerHeight + "px";
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+    w = innerWidth; h = innerHeight;
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  for (let i=0; i<180; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 4 + Math.random() * 11;
+    pieces.push({
+      x:w/2, y:h*.47,
+      vx:Math.cos(angle)*speed,
+      vy:Math.sin(angle)*speed - 4,
+      size:5 + Math.random()*8,
+      rot:Math.random()*Math.PI,
+      vr:(Math.random()-.5)*.3,
+      gravity:.12 + Math.random()*.08,
+      life:80 + Math.random()*80,
+      color:colors[(Math.random()*colors.length)|0],
+      shape:Math.random() > .5 ? "rect" : "circle"
+    });
+  }
+
+  function animate(t) {
+    ctx.clearRect(0,0,w,h);
+    pieces.forEach((p, i) => {
+      p.x += p.vx; p.y += p.vy; p.vy += p.gravity; p.rot += p.vr; p.life--;
+      ctx.save();
+      ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.color;
+      if (p.shape==="rect") ctx.fillRect(-p.size/2,-p.size/3,p.size,p.size*.55);
+      else { ctx.beginPath(); ctx.arc(0,0,p.size*.45,0,Math.PI*2); ctx.fill(); }
+      ctx.restore();
+      if (p.life <= 0) pieces[i] = {x:-100,y:-100,vx:0,vy:0,size:0,rot:0,vr:0,gravity:0,life:0,color:"#fff",shape:"rect"};
+    });
+    if (t-start < 4200) requestAnimationFrame(animate);
+    else canvas.style.display="none";
+  }
+  requestAnimationFrame(animate);
+</script>
+</body>
+</html>
